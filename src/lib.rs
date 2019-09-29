@@ -37,7 +37,25 @@ impl BitLongVec {
         }
     }
 
-    pub fn set(&self, index: usize, value: usize) {}
+    pub fn set(&mut self, index: usize, value: u64) {
+        let bit_index = index * self.bits_per_value as usize;
+        let long_bit_index = bit_index % 64;
+        let long_index = bit_index / 64;
+
+        self.data[long_index] &= !(self.max_possible_value << long_bit_index as u64);
+        self.data[long_index] |= value << long_bit_index as u64;
+
+        // Value overlaps in the next long.
+        if long_bit_index + self.bits_per_value as usize > 64 {
+            let bits_written = 64 - long_bit_index;
+            let bits_remaining = self.bits_per_value as usize - bits_written;
+
+            let remainder_max_possible_value = (1 << bits_remaining as u64) - 1;
+
+            self.data[long_index + 1] &= !(remainder_max_possible_value);
+            self.data[long_index + 1] |= value >> bits_written as u64;
+        }
+    }
 
     pub fn get(&self, index: usize) -> u64 {
         let bit_index = index * self.bits_per_value as usize;
@@ -50,7 +68,7 @@ impl BitLongVec {
         // Value overlaps in the next long.
         if long_bit_index + self.bits_per_value as usize > 64 {
             let next_long_value = self.data[long_index + 1];
-            value |= next_long_value << (64 - long_bit_index) as u64;
+            value |= next_long_value << 64 - long_bit_index as u64;
         }
 
         value & self.max_possible_value
@@ -87,8 +105,7 @@ fn test_max_possible_value() {
 
 #[test]
 fn test_set() {
-    let data = vec![17185, 34661, 52137];
-    let vec = BitLongVec::with_fixed_capacity(48, 4);
+    let mut vec = BitLongVec::with_fixed_capacity(48, 4);
 
     // long 1: [1, 2, 3, 4, 0, 0, 0, 0]
     // long 2: [5, 6, 7, 8, 0, 0, 0, 0]
@@ -96,13 +113,60 @@ fn test_set() {
     for long_index in 0..3 {
         for long_byte_index in 0..4 {
             let index = long_index * 16 + long_byte_index;
-            let value = long_index * 4 + long_byte_index + 1;
+            let value = (long_index * 4 + long_byte_index + 1) as u64;
 
             vec.set(index, value);
         }
     }
 
-    assert_eq!(vec.data, data);
+    assert_eq!(vec.data, vec![17185, 34661, 52137]);
+}
+
+#[test]
+fn test_set_overlap() {
+    let mut vec = BitLongVec::with_fixed_capacity(9, 14);
+
+    for index in 0..9 {
+        vec.set(index, (15_000 + index) as u64);
+    }
+
+    assert_eq!(vec.data, vec![11306972589037353624, 4224634284506261370]);
+}
+
+#[test]
+fn test_set_clean_bits() {
+    let mut vec = BitLongVec::from_data(vec![2762], 3, 4);
+    vec.set(1, 0);
+
+    assert_eq!(vec.data[0], 2570)
+}
+
+#[test]
+fn test_set_overlap_clean_bits() {
+    let data = vec![11306972589037353624, 4224634284506261370];
+    let mut vec = BitLongVec::from_data(data, 9, 14);
+    vec.set(4, 0);
+
+    assert_eq!(vec.data[0], 65987919120595608);
+    assert_eq!(vec.data[1], 4224634284506261312);
+}
+
+#[test]
+fn test_set_change_bits() {
+    let mut vec = BitLongVec::from_data(vec![2762], 3, 4);
+    vec.set(1, 8);
+
+    assert_eq!(vec.data[0], 2698);
+}
+
+#[test]
+fn test_set_overlap_change_bits() {
+    let data = vec![11306972589037353624, 4224634284506261370];
+    let mut vec = BitLongVec::from_data(data, 9, 14);
+    vec.set(4, 8);
+
+    assert_eq!(vec.data[0], 642448671424019096);
+    assert_eq!(vec.data[1], 4224634284506261312);
 }
 
 #[test]
@@ -131,13 +195,4 @@ fn test_get_overlap() {
     for index in 0..9 {
         assert_eq!(vec.get(index), 15_000 + index as u64);
     }
-}
-
-#[test]
-fn test_reset_bits() {
-    let mut vec = BitLongVec::with_fixed_capacity(1, 4);
-    vec.set(0, 15);
-    vec.set(0, 0);
-
-    assert_eq!(vec.get(0), 0);
 }
