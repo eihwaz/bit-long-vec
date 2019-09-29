@@ -12,10 +12,7 @@ pub struct BitLongVec {
 
 impl BitLongVec {
     pub fn with_fixed_capacity(capacity: usize, bits_per_value: u8) -> Self {
-        assert!(
-            bits_per_value <= 64,
-            "Bit per value cannot be greater than 64"
-        );
+        assert!(64 > bits_per_value, "Bit per value must be less than 64");
 
         let longs_required = ((capacity * bits_per_value as usize) as f64 / 64.0).ceil() as usize;
         let max_possible_value = (1 << bits_per_value as u64) - 1;
@@ -48,7 +45,15 @@ impl BitLongVec {
         let long_index = bit_index / 64;
 
         let long_value = self.data[long_index];
-        let value = long_value >> long_bit_index as u64;
+        let mut value = long_value >> long_bit_index as u64;
+
+        let end_bit_index = long_bit_index + self.bits_per_value as usize;
+
+        // Value overlaps in the next long.
+        if end_bit_index as usize > 64 {
+            let next_long_value = self.data[long_index + 1];
+            value |= next_long_value << (64 - long_bit_index) as u64;
+        }
 
         value & self.max_possible_value
     }
@@ -94,10 +99,10 @@ fn test_set() {
     // long 1: [1, 2, 3, 4, 0, 0, 0, 0]
     // long 2: [5, 6, 7, 8, 0, 0, 0, 0]
     // long 3: [9, 10, 11, 12, 0, 0, 0, 0]
-    for long in 0..3 {
-        for i in 0..4 {
-            let index = long * 16 + i;
-            let value = long * 4 + i + 1;
+    for long_index in 0..3 {
+        for long_byte_index in 0..4 {
+            let index = long_index * 16 + long_byte_index;
+            let value = long_index * 4 + long_byte_index + 1;
 
             vec.set(index, value);
         }
@@ -118,13 +123,26 @@ fn test_get() {
     // long 1: [1, 2, 3, 4, 0, 0, 0, 0]
     // long 2: [5, 6, 7, 8, 0, 0, 0, 0]
     // long 3: [9, 10, 11, 12, 0, 0, 0, 0]
-    for long in 0..3 {
-        for i in 0..4 {
-            let index = long * 16 + i;
-            let value = (long * 4 + i + 1) as u64;
+    for long_index in 0..3 {
+        for long_byte_index in 0..4 {
+            let index = long_index * 16 + long_byte_index;
+            let value = (long_index * 4 + long_byte_index + 1) as u64;
 
             assert_eq!(vec.get(index), value)
         }
+    }
+}
+
+#[test]
+fn test_get_overlap() {
+    let mut data = Vec::new();
+    data.push(11306972589037353624);
+    data.push(4224634284506261370);
+
+    let vec = BitLongVec::from_data(data, 9, 14);
+
+    for index in 0..9 {
+        assert_eq!(vec.get(index), 15_000 + index as u64);
     }
 }
 
