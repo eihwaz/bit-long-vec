@@ -89,11 +89,7 @@ fn test_max_possible_value() {
 
 #[test]
 fn test_set() {
-    let mut data = Vec::new();
-    data.push(17185);
-    data.push(34661);
-    data.push(52137);
-
+    let data = vec![17185, 34661, 52137];
     let vec = BitLongVec::with_fixed_capacity(48, 4);
 
     // long 1: [1, 2, 3, 4, 0, 0, 0, 0]
@@ -113,11 +109,7 @@ fn test_set() {
 
 #[test]
 fn test_get() {
-    let mut data = Vec::new();
-    data.push(17185);
-    data.push(34661);
-    data.push(52137);
-
+    let data = vec![17185, 34661, 52137];
     let vec = BitLongVec::from_data(data, 48, 4);
 
     // long 1: [1, 2, 3, 4, 0, 0, 0, 0]
@@ -135,10 +127,7 @@ fn test_get() {
 
 #[test]
 fn test_get_overlap() {
-    let mut data = Vec::new();
-    data.push(11306972589037353624);
-    data.push(4224634284506261370);
-
+    let data = vec![11306972589037353624, 4224634284506261370];
     let vec = BitLongVec::from_data(data, 9, 14);
 
     for index in 0..9 {
