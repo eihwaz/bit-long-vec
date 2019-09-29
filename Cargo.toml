@@ -1,0 +1,5 @@
+[package]
+name = "bit-long-vec"
+version = "0.1.0"
+authors = ["vagola <vladislavs.golubs@yandex.ru>"]
+edition = "2018"
