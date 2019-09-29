@@ -5,7 +5,7 @@ pub struct BitLongVec {
     /// Bits per value in internal storage.
     pub bits_per_value: u8,
     /// Maximum possible stored value.
-    pub max_possible_value: usize,
+    pub max_possible_value: u64,
     /// Internal storage for values.
     pub data: Vec<u64>,
 }
@@ -18,7 +18,7 @@ impl BitLongVec {
         );
 
         let longs_required = ((capacity * bits_per_value as usize) as f64 / 64.0).ceil() as usize;
-        let max_possible_value = (1 << bits_per_value as usize) - 1;
+        let max_possible_value = (1 << bits_per_value as u64) - 1;
         let data = vec![0u64; longs_required]; // <- Fastest way to initialize a vector.
 
         BitLongVec {
@@ -30,7 +30,7 @@ impl BitLongVec {
     }
 
     pub fn from_data(data: Vec<u64>, capacity: usize, bits_per_value: u8) -> Self {
-        let max_possible_value = (1 << bits_per_value as usize) - 1;
+        let max_possible_value = (1 << bits_per_value as u64) - 1;
 
         BitLongVec {
             capacity,
@@ -42,8 +42,15 @@ impl BitLongVec {
 
     pub fn set(&self, index: usize, value: usize) {}
 
-    pub fn get(&self, index: usize) -> usize {
-        0
+    pub fn get(&self, index: usize) -> u64 {
+        let bit_index = index * self.bits_per_value as usize;
+        let long_bit_index = bit_index % 64;
+        let long_index = bit_index / 64;
+
+        let long_value = self.data[long_index];
+        let value = long_value >> long_bit_index as u64;
+
+        value & self.max_possible_value
     }
 }
 
@@ -114,7 +121,7 @@ fn test_get() {
     for long in 0..3 {
         for i in 0..4 {
             let index = long * 16 + i;
-            let value = long * 4 + i + 1;
+            let value = (long * 4 + i + 1) as u64;
 
             assert_eq!(vec.get(index), value)
         }
