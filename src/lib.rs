@@ -47,10 +47,8 @@ impl BitLongVec {
         let long_value = self.data[long_index];
         let mut value = long_value >> long_bit_index as u64;
 
-        let end_bit_index = long_bit_index + self.bits_per_value as usize;
-
         // Value overlaps in the next long.
-        if end_bit_index as usize > 64 {
+        if long_bit_index + self.bits_per_value as usize > 64 {
             let next_long_value = self.data[long_index + 1];
             value |= next_long_value << (64 - long_bit_index) as u64;
         }
