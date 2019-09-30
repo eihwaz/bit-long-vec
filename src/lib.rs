@@ -27,6 +27,8 @@ impl BitLongVec {
     }
 
     pub fn from_data(data: Vec<u64>, capacity: usize, bits_per_value: u8) -> Self {
+        assert!(64 > bits_per_value, "Bit per value must be less than 64");
+
         let max_possible_value = (1 << bits_per_value as u64) - 1;
 
         BitLongVec {
@@ -38,6 +40,9 @@ impl BitLongVec {
     }
 
     pub fn set(&mut self, index: usize, value: u64) {
+        assert!(self.capacity > index, "Index out of bounds");
+        assert!(self.max_possible_value >= value, "Value exceeds maximum");
+
         let bit_index = index * self.bits_per_value as usize;
         let long_bit_index = bit_index % 64;
         let long_index = bit_index / 64;
@@ -58,6 +63,8 @@ impl BitLongVec {
     }
 
     pub fn get(&self, index: usize) -> u64 {
+        assert!(self.capacity > index, "Index out of bounds");
+
         let bit_index = index * self.bits_per_value as usize;
         let long_bit_index = bit_index % 64;
         let long_index = bit_index / 64;
