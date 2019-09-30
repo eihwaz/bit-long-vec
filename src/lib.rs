@@ -78,6 +78,16 @@ impl BitLongVec {
 
         value & self.max_possible_value
     }
+
+    pub fn resize(&self, bits_per_block: u8) -> BitLongVec {
+        let mut new_vec = BitLongVec::with_fixed_capacity(self.capacity, bits_per_block);
+
+        for index in 0..self.capacity {
+            new_vec.set(index, self.get(index));
+        }
+
+        new_vec
+    }
 }
 
 #[test]
@@ -233,4 +243,19 @@ fn test_set_value_exceeds_maximum() {
 fn test_get_index_out_of_bounds() {
     let vec = BitLongVec::with_fixed_capacity(1, 4);
     vec.get(100);
+}
+
+#[test]
+fn test_resize() {
+    let mut vec = BitLongVec::with_fixed_capacity(15, 8);
+
+    for index in 0..15 {
+        vec.set(index, index as u64);
+    }
+
+    let new_vec = vec.resize(4);
+
+    for index in 0..15 {
+        assert_eq!(vec.get(index), index as u64);
+    }
 }
