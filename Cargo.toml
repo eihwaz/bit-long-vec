@@ -1,6 +1,6 @@
 [package]
 name = "bit-long-vec"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["vagola <vladislavs.golubs@yandex.ru>"]
 edition = "2018"
 description = "Vector with fixed bit sized values stored in long."
