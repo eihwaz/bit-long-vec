@@ -44,15 +44,15 @@ impl BitLongVec {
         assert!(self.max_possible_value >= value, "Value exceeds maximum");
 
         let bit_index = index * self.bits_per_value as usize;
-        let long_bit_index = bit_index % 64;
         let long_index = bit_index / 64;
+        let long_bit_start_index = bit_index % 64;
 
-        self.data[long_index] &= !(self.max_possible_value << long_bit_index as u64);
-        self.data[long_index] |= value << long_bit_index as u64;
+        self.data[long_index] &= !(self.max_possible_value << long_bit_start_index as u64);
+        self.data[long_index] |= value << long_bit_start_index as u64;
 
         // Value overlaps in the next long.
-        if long_bit_index + self.bits_per_value as usize > 64 {
-            let bits_written = 64 - long_bit_index;
+        if long_bit_start_index + self.bits_per_value as usize > 64 {
+            let bits_written = 64 - long_bit_start_index;
             let bits_remaining = self.bits_per_value as usize - bits_written;
 
             let remainder_max_possible_value = (1 << bits_remaining as u64) - 1;
@@ -66,16 +66,14 @@ impl BitLongVec {
         assert!(self.capacity > index, "Index out of bounds");
 
         let bit_index = index * self.bits_per_value as usize;
-        let long_bit_index = bit_index % 64;
         let long_index = bit_index / 64;
+        let long_bit_start_index = bit_index % 64;
 
-        let long_value = self.data[long_index];
-        let mut value = long_value >> long_bit_index as u64;
+        let mut value = self.data[long_index] >> long_bit_start_index as u64;
 
         // Value overlaps in the next long.
-        if long_bit_index + self.bits_per_value as usize > 64 {
-            let next_long_value = self.data[long_index + 1];
-            value |= next_long_value << 64 - long_bit_index as u64;
+        if long_bit_start_index + self.bits_per_value as usize > 64 {
+            value |= self.data[long_index + 1] << 64 - long_bit_start_index as u64;
         }
 
         value & self.max_possible_value
