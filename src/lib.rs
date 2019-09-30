@@ -201,3 +201,36 @@ fn test_get_overlap() {
         assert_eq!(vec.get(index), 15_000 + index as u64);
     }
 }
+
+#[test]
+#[should_panic(expected = "Bit per value must be less than 64")]
+fn test_with_fixed_capacity_bits_above_64() {
+    BitLongVec::with_fixed_capacity(1, 128);
+}
+
+#[test]
+#[should_panic(expected = "Bit per value must be less than 64")]
+fn test_with_from_data_bits_above_64() {
+    BitLongVec::from_data(vec![], 1, 128);
+}
+
+#[test]
+#[should_panic(expected = "Index out of bounds")]
+fn test_set_index_out_of_bounds() {
+    let mut vec = BitLongVec::with_fixed_capacity(1, 4);
+    vec.set(100, 1);
+}
+
+#[test]
+#[should_panic(expected = "Value exceeds maximum")]
+fn test_set_value_exceeds_maximum() {
+    let mut vec = BitLongVec::with_fixed_capacity(1, 4);
+    vec.set(0, 16);
+}
+
+#[test]
+#[should_panic(expected = "Index out of bounds")]
+fn test_get_index_out_of_bounds() {
+    let vec = BitLongVec::with_fixed_capacity(1, 4);
+    vec.get(100);
+}
