@@ -9,3 +9,7 @@ homepage = "https://github.com/eihwaz/bit-long-vec"
 repository = "https://github.com/eihwaz/bit-long-vec"
 keywords = ["bitset", "bitvector"]
 readme = "README.md"
+
+[badges]
+travis-ci = { repository = "eihwaz/bit-long-vec", branch = "master" }
+codecov = { repository = "eihwaz/bit-long-vec" }
