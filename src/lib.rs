@@ -274,7 +274,7 @@ fn test_from_data_bits_above_64() {
 
 #[test]
 #[should_panic(expected = "Data length not match capacity")]
-fn test_from_data_capacity_data_length_not_match_capacity() {
+fn test_from_data_length_not_match_capacity() {
     BitLongVec::from_data(vec![1], 3, 32);
 }
 
