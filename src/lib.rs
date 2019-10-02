@@ -1,4 +1,25 @@
-/// Vector with fixed bit sized values stored in long.
+//! Vector with fixed bit sized values stored in long.
+//!
+//! Effective to reduce the amount of memory needed for storage values
+//! whose size is not a power of 2. As drawback to set and  get values
+//! uses additional CPU cycles for bit operations.
+//!
+//! # Example
+//!
+//! In this particular scenario, we want to store 10 bit values. It takes
+//! 200 bytes to store 100 values using short. To store 100 values using
+//! a bit long vector, 15 lengths are required, which is 120 bytes (-40%).
+//!
+//! ```
+//! use bit_long_vec::BitLongVec;
+//!
+//! let mut vec = BitLongVec::with_fixed_capacity(100, 10);
+//!
+//! for index in 0..100 {
+//!     vec.set(index, 1023);
+//!     assert_eq!(vec.get(index), 1023);
+//! }
+//! ```
 pub struct BitLongVec {
     /// Capacity of array.
     pub capacity: usize,
@@ -11,6 +32,11 @@ pub struct BitLongVec {
 }
 
 impl BitLongVec {
+    /// Create a fixed capacity vector. All values are will be initialized to 0.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bits_per_value` is greater or equals 64.
     pub fn with_fixed_capacity(capacity: usize, bits_per_value: u8) -> Self {
         assert!(64 > bits_per_value, "Bit per value must be less than 64");
 
@@ -26,8 +52,15 @@ impl BitLongVec {
         }
     }
 
+    /// Create vector from long array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bits_per_value` >= 64 or data length not match capacity.
     pub fn from_data(data: Vec<u64>, capacity: usize, bits_per_value: u8) -> Self {
         assert!(64 > bits_per_value, "Bit per value must be less than 64");
+        let longs_required = ((capacity * bits_per_value as usize) as f64 / 64.0).ceil() as usize;
+        assert_eq!(longs_required, data.len(), "Data length not match capacity");
 
         let max_possible_value = (1 << bits_per_value as u64) - 1;
 
@@ -39,6 +72,11 @@ impl BitLongVec {
         }
     }
 
+    /// Sets the `value` in the` index` position.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` out of bounds or `value` exceeds maximum.
     pub fn set(&mut self, index: usize, value: u64) {
         assert!(self.capacity > index, "Index out of bounds");
         assert!(self.max_possible_value >= value, "Value exceeds maximum");
@@ -62,6 +100,11 @@ impl BitLongVec {
         }
     }
 
+    /// Returns the `value` in the` index` position.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` out of bounds.
     pub fn get(&self, index: usize) -> u64 {
         assert!(self.capacity > index, "Index out of bounds");
 
@@ -79,6 +122,11 @@ impl BitLongVec {
         value & self.max_possible_value
     }
 
+    /// Return new vector resized to new `bits_per_block`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bits_per_value` >= 64 or `value` after resize exceeds maximum.
     pub fn resize(&self, bits_per_block: u8) -> BitLongVec {
         let mut new_vec = BitLongVec::with_fixed_capacity(self.capacity, bits_per_block);
 
@@ -220,8 +268,14 @@ fn test_with_fixed_capacity_bits_above_64() {
 
 #[test]
 #[should_panic(expected = "Bit per value must be less than 64")]
-fn test_with_from_data_bits_above_64() {
+fn test_from_data_bits_above_64() {
     BitLongVec::from_data(vec![], 1, 128);
+}
+
+#[test]
+#[should_panic(expected = "Data length not match capacity")]
+fn test_from_data_capacity_data_length_not_match_capacity() {
+    BitLongVec::from_data(vec![1], 3, 32);
 }
 
 #[test]
