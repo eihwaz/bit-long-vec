@@ -22,6 +22,8 @@ In this particular scenario, we want to store 10 bit values. It takes 200 bytes 
 To store 100 values using a bit long vector, 15 lengths are required, which is 120 bytes. (**-40%**). 
 
 ```rust
+use bit_long_vec::BitLongVec;
+
 let mut vec = BitLongVec::with_fixed_capacity(100, 10);
 
 for index in 0..100 {
