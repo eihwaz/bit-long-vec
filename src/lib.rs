@@ -20,7 +20,7 @@
 //!     assert_eq!(vec.get(index), 1023);
 //! }
 //! ```
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct BitLongVec {
     /// Capacity of array.
     pub capacity: usize,
@@ -30,15 +30,6 @@ pub struct BitLongVec {
     pub max_possible_value: u64,
     /// Internal storage for values.
     pub data: Vec<u64>,
-}
-
-impl PartialEq for BitLongVec {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.capacity == rhs.capacity 
-            && self.bits_per_value == rhs.bits_per_value
-            && self.max_possible_value == rhs.max_possible_value
-            && self.data == rhs.data
-    }
 }
 
 impl BitLongVec {
@@ -146,30 +137,6 @@ impl BitLongVec {
 
         new_vec
     }
-}
-
-#[test]
-fn test_partial_eq_simple() {
-    let mut vec = BitLongVec::with_fixed_capacity(100, 63);
-    let mut vec2 = BitLongVec::with_fixed_capacity(100, 63);    
-    for i in 0..100 {
-        let a = (i+1) as u64;
-        vec.set(i, a);
-        vec2.set(i, a);
-    }
-    assert_eq!(vec, vec2);
-}
-
-#[test]
-#[should_panic]
-fn test_partial_eq_data_diff_attr() {
-    let mut vec = BitLongVec::with_fixed_capacity(1, 63);
-    let mut vec2 = BitLongVec::with_fixed_capacity(63, 1);    
-    vec.set(0, 2u64.pow(63)-1);
-    for i in 0..63 {
-        vec2.set(i, 1);
-    }
-    assert_eq!(vec, vec2);
 }
 
 #[test]
