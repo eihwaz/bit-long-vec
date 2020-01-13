@@ -20,6 +20,7 @@
 //!     assert_eq!(vec.get(index), 1023);
 //! }
 //! ```
+#[derive(Debug, PartialEq)]
 pub struct BitLongVec {
     /// Capacity of array.
     pub capacity: usize,
